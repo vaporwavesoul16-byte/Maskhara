@@ -594,6 +594,9 @@ export default function App() {
       )}
       {contextMenu?.kind==='element' && ctxTarget && (
         <ContextMenu x={contextMenu.sx} y={contextMenu.sy}
+          onAddCard={type=>addCard(type)}
+          onAddSection={key=>addSection(key)}
+          onAddGroup={()=>addGroup()}
           targetId={ctxTarget.id}
           targetLocked={!!ctxTarget.locked}
           onToggleLock={()=>toggleLock(ctxTarget.id,ctxTarget.type)}

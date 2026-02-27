@@ -63,3 +63,12 @@ export const GROUP_COLORS = [
 export type Snapshot = {
   cards: CardData[]; sections: SectionData[]; groups: GroupData[];
 };
+
+export interface BoardExport {
+  version: number;
+  exportedAt: string;
+  boardTitle: string;
+  cards: CardData[];
+  sections: SectionData[];
+  groups: GroupData[];
+}
