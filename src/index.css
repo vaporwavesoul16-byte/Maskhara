@@ -16,3 +16,8 @@ html, body, #root {
 button { cursor: pointer; }
 
 textarea { resize: none; }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

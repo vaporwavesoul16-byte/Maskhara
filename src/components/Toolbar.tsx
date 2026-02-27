@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { CardType, SectionKey, SECTION_ACCENT } from '../types';
-import { StickyNote, ImageIcon, Link2, Palette, User, Briefcase, ZoomIn, ZoomOut, Maximize2, Trash2, Search, Plus, LayoutGrid, Undo2, Redo2, Group, Pencil, Download, Upload, Menu, X, Square } from 'lucide-react';
+import type { SyncStatus } from '../hooks/useSync';
+import { StickyNote, ImageIcon, Link2, Palette, User, Briefcase, ZoomIn, ZoomOut, Maximize2, Trash2, Search, Plus, LayoutGrid, Undo2, Redo2, Group, Pencil, Download, Upload, Menu, X, Square, Cloud, CloudOff, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface Props {
   zoom: number; boardTitle: string; onBoardTitleChange: (t: string) => void;
@@ -15,6 +16,7 @@ interface Props {
   isMobile: boolean;
   drawMode: boolean;
   onToggleDrawMode: () => void;
+  syncStatus: SyncStatus;
 }
 
 const BTN: React.CSSProperties = {
@@ -38,7 +40,7 @@ const PRESET_SECTIONS: Array<{ key: SectionKey; label: string }> = [
   { key:'identity', label:'Identity' }, { key:'projects', label:'Projects' }, { key:'notes', label:'Notes' },
 ];
 
-export function Toolbar({ zoom, boardTitle, onBoardTitleChange, searchQuery, onSearchChange, onAddCard, onAddSection, onAddGroup, onZoomIn, onZoomOut, onFitView, onClearAll, selectedCount, onDeleteSelected, onUndo, onRedo, canUndo, canRedo, onExport, onImport, isMobile, drawMode, onToggleDrawMode }: Props) {
+export function Toolbar({ zoom, boardTitle, onBoardTitleChange, searchQuery, onSearchChange, onAddCard, onAddSection, onAddGroup, onZoomIn, onZoomOut, onFitView, onClearAll, selectedCount, onDeleteSelected, onUndo, onRedo, canUndo, canRedo, onExport, onImport, isMobile, drawMode, onToggleDrawMode, syncStatus }: Props) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [showSectionMenu, setShowSectionMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -169,6 +171,17 @@ export function Toolbar({ zoom, boardTitle, onBoardTitleChange, searchQuery, onS
         <button style={BTN} onClick={onZoomIn}><ZoomIn size={13}/></button>
         <button style={BTN} onClick={onFitView} title="Fit view"><Maximize2 size={13}/></button>
       </div>
+
+      {/* Sync status */}
+      {syncStatus !== 'unconfigured' && (
+        <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:10, fontFamily:'Outfit, sans-serif', opacity:0.7, flexShrink:0, marginLeft:4 }}>
+          {syncStatus==='saved'    && <><CheckCircle2 size={11} style={{ color:'#2CB87A' }}/><span style={{ color:'#2CB87A' }}>Saved</span></>}
+          {syncStatus==='saving'   && <><Loader2 size={11} style={{ color:'#D4A843', animation:'spin 1s linear infinite' }}/><span style={{ color:'#D4A843' }}>Saving…</span></>}
+          {syncStatus==='unsaved'  && <><Cloud size={11} style={{ color:'rgba(255,255,255,0.3)' }}/><span style={{ color:'rgba(255,255,255,0.3)' }}>Unsaved</span></>}
+          {syncStatus==='loading'  && <><Loader2 size={11} style={{ color:'rgba(255,255,255,0.3)', animation:'spin 1s linear infinite' }}/><span style={{ color:'rgba(255,255,255,0.3)' }}>Loading…</span></>}
+          {syncStatus==='offline'  && <><CloudOff size={11} style={{ color:'#C23B22' }}/><span style={{ color:'#C23B22' }}>Offline</span></>}
+        </div>
+      )}
       {selectedCount>0 && (
         <button onClick={onDeleteSelected} style={{ ...BTN, borderColor:'#C23B2255', color:'#C23B22' }}>
           <Trash2 size={13}/><span>Delete ({selectedCount})</span>

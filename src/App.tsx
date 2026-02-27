@@ -15,6 +15,8 @@ import { Minimap } from './components/Minimap';
 import { ContextMenu } from './components/ContextMenu';
 import { SnapGuides } from './components/SnapGuides';
 import { ColorPicker } from './components/ColorPicker';
+import { useSync } from './hooks/useSync';
+import { isConfigured } from './utils/db';
 
 let idCounter = 100;
 const genId = () => `id-${idCounter++}`;
@@ -67,6 +69,30 @@ export default function App() {
   const [defaultStroke, setDefaultStroke] = useState('#D4A843');
   const isMobile = useIsMobile();
 
+  // Sync — live snapshot for auto-save
+  const liveSnap = useCallback((): Snapshot => ({
+    cards: cardsRef.current, sections: sectionsRef.current,
+    groups: groupsRef.current, shapes: shapesRef.current,
+  }), []);
+
+  const { status: syncStatus, markDirty, saveNow: syncSaveNow } = useSync({
+    boardTitle,
+    onLoad: (snapshot, title) => {
+      setCards(snapshot.cards);
+      setSections(snapshot.sections);
+      setGroups(snapshot.groups ?? []);
+      setShapes((snapshot as any).shapes ?? []);
+      if (title) { setBoardTitle(title); localStorage.setItem('maskhara-title', title); }
+    },
+    onRemoteUpdate: (snapshot, title) => {
+      setCards(snapshot.cards);
+      setSections(snapshot.sections);
+      setGroups(snapshot.groups ?? []);
+      setShapes((snapshot as any).shapes ?? []);
+      if (title) { setBoardTitle(title); localStorage.setItem('maskhara-title', title); }
+    },
+  });
+
   // History
   const past     = useRef<Snapshot[]>([]);
   const future   = useRef<Snapshot[]>([]);
@@ -105,7 +131,8 @@ export default function App() {
     past.current.push(s);
     if (past.current.length > MAX_HISTORY) past.current.shift();
     future.current = []; setCanUndo(true); setCanRedo(false);
-  }, []);
+    setTimeout(() => markDirty(liveSnap()), 0);
+  }, [markDirty, liveSnap]);
 
   const saveNow = useCallback(() => {
     if (debTimer.current) { clearTimeout(debTimer.current); debTimer.current=null; debSnap.current=null; }
@@ -530,10 +557,10 @@ export default function App() {
     setPanY(window.innerHeight/2-(item.y+item.height/2)*zoom);
   },[zoom]);
 
-  const updateCard    =(id:string,patch:Partial<CardData>)    =>{saveDebounced();setCards(prev=>prev.map(c=>c.id===id?{...c,...patch}:c));};
-  const updateCardNow =(id:string,patch:Partial<CardData>)    =>{saveNow();setCards(prev=>prev.map(c=>c.id===id?{...c,...patch}:c));};
-  const updateSection =(id:string,patch:Partial<SectionData>,imm=false)=>{imm?saveNow():saveDebounced();setSections(prev=>prev.map(s=>s.id===id?{...s,...patch}:s));};
-  const updateGroup   =(id:string,patch:Partial<GroupData>,imm=false)  =>{imm?saveNow():saveDebounced();setGroups(prev=>prev.map(g=>g.id===id?{...g,...patch}:g));};
+  const updateCard    =(id:string,patch:Partial<CardData>)    =>{saveDebounced();setCards(prev=>{const n=prev.map(c=>c.id===id?{...c,...patch}:c);setTimeout(()=>markDirty(liveSnap()),0);return n;});};
+  const updateCardNow =(id:string,patch:Partial<CardData>)    =>{saveNow();setCards(prev=>{const n=prev.map(c=>c.id===id?{...c,...patch}:c);setTimeout(()=>markDirty(liveSnap()),0);return n;});};
+  const updateSection =(id:string,patch:Partial<SectionData>,imm=false)=>{imm?saveNow():saveDebounced();setSections(prev=>{const n=prev.map(s=>s.id===id?{...s,...patch}:s);setTimeout(()=>markDirty(liveSnap()),0);return n;});};
+  const updateGroup   =(id:string,patch:Partial<GroupData>,imm=false)  =>{imm?saveNow():saveDebounced();setGroups(prev=>{const n=prev.map(g=>g.id===id?{...g,...patch}:g);setTimeout(()=>markDirty(liveSnap()),0);return n;});};
 
   // Draw shape preview
   const drawPreview = dragState?.kind==='draw-shape' ? (()=>{
@@ -657,6 +684,7 @@ export default function App() {
         onUndo={undo} onRedo={redo} canUndo={canUndo} canRedo={canRedo}
         onExport={handleExport} onImport={handleImport}
         isMobile={isMobile} drawMode={drawMode} onToggleDrawMode={()=>setDrawMode(v=>!v)}
+        syncStatus={syncStatus}
       />
 
       <Sidebar sections={sections} groups={groups} onNavigate={navigateTo} isMobile={isMobile} />
