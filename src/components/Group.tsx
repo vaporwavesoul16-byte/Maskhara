@@ -1,16 +1,15 @@
 import { useState } from 'react';
 import { GroupData } from '../types';
-import { X, Lock } from 'lucide-react';
+import { X, Lock, RotateCw } from 'lucide-react';
 
 interface Props {
-  group: GroupData;
-  isSelected: boolean;
+  group: GroupData; isSelected: boolean;
   onSelect: (e: React.MouseEvent) => void;
   onStartMove: (e: React.MouseEvent) => void;
   onStartResize: (e: React.MouseEvent, edge: string) => void;
+  onStartRotate: (e: React.MouseEvent) => void;
   onUpdate: (patch: Partial<GroupData>) => void;
   onDelete: () => void;
-  onContextMenu: (e: React.MouseEvent) => void;
   onContextMenu: (e: React.MouseEvent) => void;
 }
 
@@ -25,18 +24,26 @@ const EDGES = [
   { id:'sw', style:{ bottom:0, left:0, width:12, height:12, cursor:'sw-resize' } },
 ];
 
-export function Group({ group, isSelected, onSelect, onStartMove, onStartResize, onUpdate, onDelete, onContextMenu }: Props) {
+export function Group({ group, isSelected, onSelect, onStartMove, onStartResize, onStartRotate, onUpdate, onDelete, onContextMenu }: Props) {
   const [editing, setEditing] = useState(false);
   const locked = !!group.locked;
+  const rot = group.rotation ?? 0;
   const hex = group.color;
 
   return (
     <div
-      style={{ position:'absolute', left:group.x, top:group.y, width:group.width, height:group.height, background:`${hex}10`, border:`1.5px dashed ${isSelected?`${hex}90`:`${hex}40`}`, borderRadius:10, transition:'border-color 0.2s' }}
+      style={{ position:'absolute', left:group.x, top:group.y, width:group.width, height:group.height, background:`${hex}10`, border:`1.5px dashed ${isSelected?`${hex}90`:`${hex}40`}`, borderRadius:10, transform:rot?`rotate(${rot}deg)`:undefined, transformOrigin:'center center', transition:'border-color 0.2s' }}
       onMouseDown={e=>{ onSelect(e); if(!locked) onStartMove(e); }}
-      onContextMenu={e=>{ e.stopPropagation(); onContextMenu(e); }}
       onContextMenu={onContextMenu}
     >
+      {/* Rotation handle */}
+      {isSelected && !locked && (
+        <div onMouseDown={e=>{ e.stopPropagation(); onStartRotate(e); }}
+          style={{ position:'absolute', top:-32, left:'50%', transform:'translateX(-50%)', width:20, height:20, borderRadius:'50%', background:'rgba(14,14,14,0.9)', border:`1.5px solid ${hex}99`, display:'flex', alignItems:'center', justifyContent:'center', cursor:'grab', zIndex:20 }}>
+          <RotateCw size={11} style={{ color:hex }}/>
+        </div>
+      )}
+
       <div style={{ position:'absolute', top:-1, left:10, display:'flex', alignItems:'center', gap:6, background:'#141414', border:`1px solid ${hex}50`, borderRadius:'0 0 6px 6px', padding:'3px 8px', pointerEvents:'all' }}
         onMouseDown={e=>e.stopPropagation()}>
         <div style={{ position:'relative', width:10, height:10, borderRadius:'50%', background:hex, flexShrink:0, overflow:'hidden' }}>

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { CardData, CardType, SwatchEntry } from '../types';
-import { ImageIcon, Link2, StickyNote, Palette, User, Briefcase, X, Lock } from 'lucide-react';
+import { ImageIcon, Link2, StickyNote, Palette, User, Briefcase, X, Lock, RotateCw } from 'lucide-react';
 
 interface Props {
   card: CardData;
@@ -8,35 +8,27 @@ interface Props {
   onSelect: (e: React.MouseEvent) => void;
   onStartMove: (e: React.MouseEvent) => void;
   onStartResize: (e: React.MouseEvent, edge: string) => void;
+  onStartRotate: (e: React.MouseEvent) => void;
   onUpdate: (patch: Partial<CardData>) => void;
   onUpdateImmediate: (patch: Partial<CardData>) => void;
   onDelete: () => void;
   onContextMenu: (e: React.MouseEvent) => void;
-  onContextMenu: (e: React.MouseEvent) => void;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  'planned': '#8B5CF6', 'in-progress': '#D4A843',
-  'completed': '#2CB87A', 'on-hold': '#C23B22',
-};
-const TYPE_ICON: Record<CardType, React.ReactNode> = {
-  note: <StickyNote size={11}/>, image: <ImageIcon size={11}/>, link: <Link2 size={11}/>,
-  swatch: <Palette size={11}/>, persona: <User size={11}/>, project: <Briefcase size={11}/>,
+const STATUS_COLORS: Record<string,string> = { 'planned':'#8B5CF6','in-progress':'#D4A843','completed':'#2CB87A','on-hold':'#C23B22' };
+const TYPE_ICON: Record<CardType,React.ReactNode> = {
+  note:<StickyNote size={11}/>, image:<ImageIcon size={11}/>, link:<Link2 size={11}/>,
+  swatch:<Palette size={11}/>, persona:<User size={11}/>, project:<Briefcase size={11}/>,
 };
 const F = 'Outfit, sans-serif';
 
 function EditableText({ value, onChange, placeholder, multiline, style, locked }: {
-  value: string; onChange: (v: string) => void; placeholder?: string;
-  multiline?: boolean; style?: React.CSSProperties; locked?: boolean;
+  value: string; onChange: (v: string) => void; placeholder?: string; multiline?: boolean; style?: React.CSSProperties; locked?: boolean;
 }) {
   const Tag = multiline ? 'textarea' : 'input';
-  return (
-    <Tag value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      readOnly={locked}
-      onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}
-      rows={multiline ? 4 : undefined}
-      style={{ background:'transparent', border:'none', outline:'none', resize:'none', fontFamily:F, color:'inherit', width:'100%', cursor: locked ? 'default' : 'text', ...style }} />
-  );
+  return <Tag value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} readOnly={locked}
+    onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()} rows={multiline?4:undefined}
+    style={{ background:'transparent', border:'none', outline:'none', resize:'none', fontFamily:F, color:'inherit', width:'100%', cursor:locked?'default':'text', ...style }} />;
 }
 
 const HANDLES = [
@@ -57,8 +49,7 @@ function ImageCard({ card, onUpdateImmediate, locked }: { card: CardData; onUpda
       const img = new Image();
       img.onload = () => {
         const maxW=480, maxH=400; let w=img.naturalWidth, h=img.naturalHeight;
-        if (w>maxW) { h=Math.round(h*maxW/w); w=maxW; }
-        if (h>maxH) { w=Math.round(w*maxH/h); h=maxH; }
+        if(w>maxW){h=Math.round(h*maxW/w);w=maxW;} if(h>maxH){w=Math.round(w*maxH/h);h=maxH;}
         onUpdateImmediate({ content:dataUrl, width:Math.max(w,120), height:Math.max(h+34,80) });
       };
       img.src=dataUrl;
@@ -67,8 +58,7 @@ function ImageCard({ card, onUpdateImmediate, locked }: { card: CardData; onUpda
   };
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column' }}>
-      <div onMouseDown={e=>e.stopPropagation()}
-        onClick={e=>{ e.stopPropagation(); if(!locked) fileRef.current?.click(); }}
+      <div onMouseDown={e=>e.stopPropagation()} onClick={e=>{ e.stopPropagation(); if(!locked) fileRef.current?.click(); }}
         onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); }}
         onDrop={e=>{ e.preventDefault(); e.stopPropagation(); const f=e.dataTransfer.files[0]; if(f) handleFile(f); }}
         style={{ flex:1, borderRadius:6, border:card.content?'none':'1.5px dashed rgba(255,255,255,0.12)', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', cursor:locked?'default':'pointer', background:card.content?'transparent':'rgba(255,255,255,0.02)', minHeight:60 }}>
@@ -90,11 +80,8 @@ function LinkCard({ card, onUpdate, locked }: { card: CardData; onUpdate: (p: Pa
       <EditableText value={card.content} onChange={v=>onUpdate({content:v})} placeholder="https://..." locked={locked}
         style={{ fontSize:12, color:'#5B9BFF', fontFamily:F, wordBreak:'break-all' }} />
       {card.content.startsWith('http') && (
-        <a href={card.content} target="_blank" rel="noreferrer"
-          onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()}
-          style={{ fontSize:11, color:'rgba(91,155,255,0.5)', textDecoration:'underline', cursor:'pointer', fontFamily:F }}>
-          Open link →
-        </a>
+        <a href={card.content} target="_blank" rel="noreferrer" onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()}
+          style={{ fontSize:11, color:'rgba(91,155,255,0.5)', textDecoration:'underline', cursor:'pointer', fontFamily:F }}>Open link →</a>
       )}
     </div>
   );
@@ -177,32 +164,36 @@ function ProjectCard({ card, onUpdate, onUpdateImmediate, locked }: { card: Card
 }
 
 function NoteCard({ card, onUpdate, locked }: { card: CardData; onUpdate: (p: Partial<CardData>) => void; locked?: boolean }) {
-  return (
-    <EditableText value={card.content} onChange={v=>onUpdate({content:v})} placeholder="Write here..." multiline locked={locked}
-      style={{ fontSize:13, color:'rgba(255,255,255,0.75)', fontFamily:F, lineHeight:1.7, flex:1, display:'block' }} />
-  );
+  return <EditableText value={card.content} onChange={v=>onUpdate({content:v})} placeholder="Write here..." multiline locked={locked}
+    style={{ fontSize:13, color:'rgba(255,255,255,0.75)', fontFamily:F, lineHeight:1.7, flex:1, display:'block' }} />;
 }
 
-export function Card({ card, isSelected, onSelect, onStartMove, onStartResize, onUpdate, onUpdateImmediate, onDelete, onContextMenu }: Props) {
+export function Card({ card, isSelected, onSelect, onStartMove, onStartResize, onStartRotate, onUpdate, onUpdateImmediate, onDelete, onContextMenu }: Props) {
   const [titleEdit, setTitleEdit] = useState(false);
   const locked = !!card.locked;
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    onSelect(e);
-    if (!locked) onStartMove(e);
-  };
+  const rot = card.rotation ?? 0;
+  const accent = card.accentColor;
 
   return (
-    <div onMouseDown={handleMouseDown} onContextMenu={onContextMenu}
+    <div onMouseDown={e=>{ onSelect(e); if(!locked) onStartMove(e); }} onContextMenu={onContextMenu}
       style={{
         position:'absolute', left:card.x, top:card.y, width:card.width, height:card.height,
         background:'#181C22',
-        border:`1.5px solid ${locked ? 'rgba(255,180,0,0.3)' : isSelected ? 'rgba(212,168,67,0.7)' : 'rgba(255,255,255,0.09)'}`,
+        border:`1.5px solid ${locked?'rgba(255,180,0,0.3)':accent?accent:isSelected?'rgba(212,168,67,0.7)':'rgba(255,255,255,0.09)'}`,
         borderRadius:9,
         boxShadow: isSelected ? '0 0 0 3px rgba(212,168,67,0.12), 0 6px 24px rgba(0,0,0,0.5)' : '0 3px 12px rgba(0,0,0,0.35)',
         display:'flex', flexDirection:'column', overflow:'hidden', userSelect:'none',
+        transform: rot ? `rotate(${rot}deg)` : undefined,
+        transformOrigin:'center center',
         transition:'box-shadow 0.15s, border-color 0.15s',
       }}>
+      {/* Rotation handle */}
+      {isSelected && !locked && (
+        <div onMouseDown={e=>{ e.stopPropagation(); onStartRotate(e); }}
+          style={{ position:'absolute', top:-32, left:'50%', transform:'translateX(-50%)', width:20, height:20, borderRadius:'50%', background:'rgba(14,14,14,0.9)', border:'1.5px solid rgba(212,168,67,0.6)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'grab', zIndex:20 }}>
+          <RotateCw size={11} style={{ color:'#D4A843' }}/>
+        </div>
+      )}
       {/* Header */}
       <div style={{ padding:'6px 8px', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:5, background:'rgba(255,255,255,0.02)', flexShrink:0 }}>
         <span style={{ color:'rgba(255,255,255,0.22)', display:'flex', alignItems:'center' }}>{TYPE_ICON[card.type]}</span>
@@ -232,7 +223,7 @@ export function Card({ card, isSelected, onSelect, onStartMove, onStartResize, o
         {card.type==='persona' && <PersonaCard card={card} onUpdate={onUpdate} locked={locked} />}
         {card.type==='project' && <ProjectCard card={card} onUpdate={onUpdate} onUpdateImmediate={onUpdateImmediate} locked={locked} />}
       </div>
-      {/* Resize handles — only when selected and unlocked */}
+      {/* Resize handles */}
       {isSelected && !locked && HANDLES.map(({edge,style}) => (
         <div key={edge} onMouseDown={e=>{ e.stopPropagation(); onStartResize(e,edge); }}
           style={{ position:'absolute', width:8, height:8, background:'#D4A843', border:'1.5px solid #0A0A0A', borderRadius:2, zIndex:10, cursor:CURSOR[edge], ...style } as React.CSSProperties} />
@@ -240,4 +231,3 @@ export function Card({ card, isSelected, onSelect, onStartMove, onStartResize, o
     </div>
   );
 }
-// Lock indicator patch applied via App — Card shows a lock icon when locked

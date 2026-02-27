@@ -1,15 +1,16 @@
-import { CardType, SectionKey, SECTION_ACCENT } from '../types';
-import { StickyNote, ImageIcon, Link2, Palette, User, Briefcase, LayoutGrid, Group, Lock, Unlock } from 'lucide-react';
+import { CardType, SectionKey, SECTION_ACCENT, ElementType } from '../types';
+import { StickyNote, ImageIcon, Link2, Palette, User, Briefcase, LayoutGrid, Group, Lock, Unlock, Pipette } from 'lucide-react';
 
 interface Props {
   x: number; y: number;
   onAddCard: (type: CardType) => void;
   onAddSection: (key: SectionKey) => void;
   onAddGroup: () => void;
-  // Element extras — shown at top when right-clicking an element
   targetId?: string;
   targetLocked?: boolean;
+  targetColor?: string;
   onToggleLock?: () => void;
+  onChangeColor?: () => void;
   onDeleteTarget?: () => void;
   onClose: () => void;
 }
@@ -26,12 +27,12 @@ const LBL: React.CSSProperties = {
 const SEP = <div style={{ height:1, background:'rgba(255,255,255,0.06)', margin:'3px 0' }} />;
 
 const CARDS: Array<{ type: CardType; icon: React.ReactNode; label: string }> = [
-  { type:'note',    icon:<StickyNote size={13}/>, label:'Note' },
-  { type:'image',   icon:<ImageIcon size={13}/>,  label:'Image' },
-  { type:'link',    icon:<Link2 size={13}/>,       label:'Link' },
-  { type:'swatch',  icon:<Palette size={13}/>,     label:'Colour Swatch' },
-  { type:'persona', icon:<User size={13}/>,        label:'Client Persona' },
-  { type:'project', icon:<Briefcase size={13}/>,   label:'Project Card' },
+  { type:'note', icon:<StickyNote size={13}/>, label:'Note' },
+  { type:'image', icon:<ImageIcon size={13}/>, label:'Image' },
+  { type:'link', icon:<Link2 size={13}/>, label:'Link' },
+  { type:'swatch', icon:<Palette size={13}/>, label:'Colour Swatch' },
+  { type:'persona', icon:<User size={13}/>, label:'Client Persona' },
+  { type:'project', icon:<Briefcase size={13}/>, label:'Project Card' },
 ];
 const SECTIONS: Array<{ key: SectionKey; label: string }> = [
   { key:'services', label:'Services & Products' }, { key:'clients', label:'Buyers & Clients' },
@@ -49,20 +50,31 @@ function HoverBtn({ style, children, onClick }: { style?: React.CSSProperties; c
   );
 }
 
-export function ContextMenu({ x, y, onAddCard, onAddSection, onAddGroup, targetId, targetLocked, onToggleLock, onDeleteTarget, onClose }: Props) {
+export function ContextMenu({ x, y, onAddCard, onAddSection, onAddGroup, targetId, targetLocked, targetColor, onToggleLock, onChangeColor, onDeleteTarget, onClose }: Props) {
   return (
     <>
       <div style={{ position:'fixed', inset:0, zIndex:199 }} onClick={onClose} />
-      <div onMouseDown={e=>e.stopPropagation()} style={{ position:'fixed', left:x, top:y, zIndex:200, background:'#0E0E0E', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, minWidth:210, boxShadow:'0 16px 48px rgba(0,0,0,0.85)', overflow:'hidden' }}>
+      <div onMouseDown={e=>e.stopPropagation()}
+        style={{ position:'fixed', left:x, top:y, zIndex:200, background:'#0E0E0E', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, minWidth:210, boxShadow:'0 16px 48px rgba(0,0,0,0.85)', overflow:'hidden' }}>
 
-        {/* Element options — only shown when right-clicking an element */}
-        {targetId && onToggleLock && (
+        {/* Element options */}
+        {targetId && (
           <>
             <div style={LBL}>This element</div>
-            <HoverBtn onClick={()=>{ onToggleLock(); onClose(); }}
-              style={{ color: targetLocked ? '#D4A843' : 'rgba(255,255,255,0.65)' }}>
-              {targetLocked ? <><Unlock size={13}/> Unlock position & size</> : <><Lock size={13}/> Lock position & size</>}
-            </HoverBtn>
+            {onChangeColor && (
+              <HoverBtn onClick={()=>{ onChangeColor(); onClose(); }}>
+                <span style={{ display:'flex', alignItems:'center', gap:7 }}>
+                  <Pipette size={13}/>
+                  Change colour
+                  {targetColor && <div style={{ width:12, height:12, borderRadius:3, background:targetColor, border:'1px solid rgba(255,255,255,0.2)', marginLeft:'auto' }}/>}
+                </span>
+              </HoverBtn>
+            )}
+            {onToggleLock && (
+              <HoverBtn onClick={()=>{ onToggleLock(); onClose(); }} style={{ color:targetLocked?'#D4A843':'rgba(255,255,255,0.65)' }}>
+                {targetLocked ? <><Unlock size={13}/> Unlock position & size</> : <><Lock size={13}/> Lock position & size</>}
+              </HoverBtn>
+            )}
             {onDeleteTarget && !targetLocked && (
               <HoverBtn style={{ color:'#C23B22' }} onClick={()=>{ onDeleteTarget(); onClose(); }}>
                 <span style={{ fontSize:13 }}>✕</span> Delete

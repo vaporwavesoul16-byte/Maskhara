@@ -1,17 +1,15 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { SectionData, SECTION_ACCENT, SECTION_BG } from '../types';
-import { Lock } from 'lucide-react';
+import { Lock, RotateCw } from 'lucide-react';
 
 interface Props {
-  section: SectionData;
-  isSelected: boolean;
-  zoom: number;
+  section: SectionData; isSelected: boolean; zoom: number;
   onSelect: (e: React.MouseEvent) => void;
   onStartMove: (e: React.MouseEvent) => void;
   onStartResize: (e: React.MouseEvent, edge: string) => void;
+  onStartRotate: (e: React.MouseEvent) => void;
   onUpdate: (patch: Partial<SectionData>) => void;
   onDelete: () => void;
-  onContextMenu: (e: React.MouseEvent) => void;
   onContextMenu: (e: React.MouseEvent) => void;
 }
 
@@ -26,19 +24,28 @@ const EDGES = [
   { id:'sw', style:{ bottom:0, left:0, width:12, height:12, cursor:'sw-resize' } },
 ];
 
-export function Section({ section, isSelected, onSelect, onStartMove, onStartResize, onUpdate, onDelete, onContextMenu }: Props) {
+export function Section({ section, isSelected, onSelect, onStartMove, onStartResize, onStartRotate, onUpdate, onDelete, onContextMenu }: Props) {
   const [editingLabel, setEditingLabel] = useState(false);
-  const [editingSub, setEditingSub]     = useState(false);
+  const [editingSub, setEditingSub] = useState(false);
   const locked = !!section.locked;
+  const rot = section.rotation ?? 0;
   const accent = section.customColor ?? SECTION_ACCENT[section.key];
   const bg     = section.customColor ? `${section.customColor}08` : SECTION_BG[section.key];
 
   return (
     <div
-      style={{ position:'absolute', left:section.x, top:section.y, width:section.width, height:section.height, background:bg, border:`1.5px solid ${isSelected?accent:`${accent}30`}`, borderLeft:`3px solid ${locked?'rgba(255,180,0,0.5)':accent}`, borderRadius:14, boxShadow:isSelected?`0 0 0 2px ${accent}18`:'none', transition:'border-color 0.2s, box-shadow 0.2s' }}
+      style={{ position:'absolute', left:section.x, top:section.y, width:section.width, height:section.height, background:bg, border:`1.5px solid ${isSelected?accent:`${accent}30`}`, borderLeft:`3px solid ${locked?'rgba(255,180,0,0.5)':accent}`, borderRadius:14, boxShadow:isSelected?`0 0 0 2px ${accent}18`:'none', transform:rot?`rotate(${rot}deg)`:undefined, transformOrigin:'center center', transition:'border-color 0.2s, box-shadow 0.2s' }}
       onMouseDown={e=>{ onSelect(e); if(!locked) onStartMove(e); }}
       onContextMenu={onContextMenu}
     >
+      {/* Rotation handle */}
+      {isSelected && !locked && (
+        <div onMouseDown={e=>{ e.stopPropagation(); onStartRotate(e); }}
+          style={{ position:'absolute', top:-32, left:'50%', transform:'translateX(-50%)', width:20, height:20, borderRadius:'50%', background:'rgba(14,14,14,0.9)', border:`1.5px solid ${accent}99`, display:'flex', alignItems:'center', justifyContent:'center', cursor:'grab', zIndex:20 }}>
+          <RotateCw size={11} style={{ color:accent }}/>
+        </div>
+      )}
+
       <div style={{ position:'absolute', top:0, left:0, right:0, padding:'10px 14px 8px', display:'flex', alignItems:'baseline', gap:10, pointerEvents:'none' }}>
         {editingLabel
           ? <input autoFocus value={section.label} onChange={e=>onUpdate({label:e.target.value})}

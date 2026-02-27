@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { CardType, SectionKey, SECTION_ACCENT } from '../types';
-import { StickyNote, ImageIcon, Link2, Palette, User, Briefcase, ZoomIn, ZoomOut, Maximize2, Trash2, Search, Plus, LayoutGrid, Undo2, Redo2, Group, Pencil, Download, Upload, Menu, X } from 'lucide-react';
+import { StickyNote, ImageIcon, Link2, Palette, User, Briefcase, ZoomIn, ZoomOut, Maximize2, Trash2, Search, Plus, LayoutGrid, Undo2, Redo2, Group, Pencil, Download, Upload, Menu, X, Square } from 'lucide-react';
 
 interface Props {
   zoom: number; boardTitle: string; onBoardTitleChange: (t: string) => void;
@@ -13,6 +13,8 @@ interface Props {
   onUndo: () => void; onRedo: () => void; canUndo: boolean; canRedo: boolean;
   onExport: () => void; onImport: (file: File) => void;
   isMobile: boolean;
+  drawMode: boolean;
+  onToggleDrawMode: () => void;
 }
 
 const BTN: React.CSSProperties = {
@@ -36,7 +38,7 @@ const PRESET_SECTIONS: Array<{ key: SectionKey; label: string }> = [
   { key:'identity', label:'Identity' }, { key:'projects', label:'Projects' }, { key:'notes', label:'Notes' },
 ];
 
-export function Toolbar({ zoom, boardTitle, onBoardTitleChange, searchQuery, onSearchChange, onAddCard, onAddSection, onAddGroup, onZoomIn, onZoomOut, onFitView, onClearAll, selectedCount, onDeleteSelected, onUndo, onRedo, canUndo, canRedo, onExport, onImport, isMobile }: Props) {
+export function Toolbar({ zoom, boardTitle, onBoardTitleChange, searchQuery, onSearchChange, onAddCard, onAddSection, onAddGroup, onZoomIn, onZoomOut, onFitView, onClearAll, selectedCount, onDeleteSelected, onUndo, onRedo, canUndo, canRedo, onExport, onImport, isMobile, drawMode, onToggleDrawMode }: Props) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [showSectionMenu, setShowSectionMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -146,6 +148,7 @@ export function Toolbar({ zoom, boardTitle, onBoardTitleChange, searchQuery, onS
         )}
       </div>
       <button style={BTN} onClick={onAddGroup}><Group size={13}/><span style={{ fontSize:10, color:'rgba(255,255,255,0.35)' }}>Group</span></button>
+      <button onClick={onToggleDrawMode} style={{ ...BTN, borderColor:drawMode?'rgba(212,168,67,0.6)':'rgba(255,255,255,0.08)', color:drawMode?'#D4A843':'rgba(255,255,255,0.55)', background:drawMode?'rgba(212,168,67,0.08)':'rgba(255,255,255,0.04)' }}><Square size={13}/><span style={{ fontSize:10 }}>Rectangle</span></button>
       <div style={{ flex:1 }} />
       {/* Export / Import */}
       <button style={BTN} onClick={onExport} title="Export board as JSON"><Download size={13}/><span style={{ fontSize:10, color:'rgba(255,255,255,0.35)' }}>Export</span></button>
