@@ -53,7 +53,7 @@ export function ContextMenu({ x, y, onAddCard, onAddSection, onAddGroup, targetI
   return (
     <>
       <div style={{ position:'fixed', inset:0, zIndex:199 }} onClick={onClose} />
-      <div style={{ position:'fixed', left:x, top:y, zIndex:200, background:'#0E0E0E', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, minWidth:210, boxShadow:'0 16px 48px rgba(0,0,0,0.85)', overflow:'hidden' }}>
+      <div onMouseDown={e=>e.stopPropagation()} style={{ position:'fixed', left:x, top:y, zIndex:200, background:'#0E0E0E', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, minWidth:210, boxShadow:'0 16px 48px rgba(0,0,0,0.85)', overflow:'hidden' }}>
 
         {/* Element options — only shown when right-clicking an element */}
         {targetId && onToggleLock && (
